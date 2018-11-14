@@ -1,22 +1,42 @@
 version: '3.6'
 
-
 x-global-environment: &global-environment
   C_PROJECT_STACK: __C_PROJECT_STACK__
   C_PROJECT_NAME: __C_PROJECT_NAME__
 
+x-global: &global
+  environment:
+    <<: *global-environment
+  env_file:
+    - .env
+  restart: unless-stopped
+
 
 services:
 
+  db:
+    <<: *global
+    image: "postgres:latest"
+    container_name: __C_PROJECT_NAME__-db
+    environment:
+      - POSTGRES_PASSWORD='secret'
+    volumes:
+      - .docker/postgres/pgdata:/var/lib/postgresql/data
+
   backend:
+    <<: *global
     container_name: __C_PROJECT_NAME__-backend
     image: "__C_PROJECT_NAME__-virtualenv:latest"
-    environment:
-      <<: *global-environment
+#    command: ["gunicorn", "billing.application:app", "-b", "0.0.0.0:8000", "--name", "billing", "--reload", "--worker-class", "aiohttp.GunicornWebWorker"]
+    command: ["python", "-m", "billing"]
     volumes:
-      - ".:/code"
-    expose:
-      - 8000
-    env_file:
-      - .env
-    restart: unless-stopped
+      - .:/code
+    ports:
+      - 8000:8000
+
+  test:
+    <<: *global
+    image: "__C_PROJECT_NAME__-virtualenv-test:latest"
+    volumes:
+      - .:/code
+    command: ["echo", "tests"]

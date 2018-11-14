@@ -169,7 +169,7 @@ test_style() {
     docker run \
         -v "${PWD}":/code \
         --rm "$C_PROJECT_NAME"-virtualenv-test:latest \
-        flake8 --config=test/style/.flake8 .
+        flake8 --jobs=0 --config=test/style/.flake8 .
 }
 
 test_functional() {
@@ -192,7 +192,7 @@ test_unit() {
 
 docker_build() {
     docker build -t "$C_PROJECT_NAME"-virtualenv:latest -f build/virtualenv/Dockerfile build/virtualenv
-    docker build --cache-from "$C_PROJECT_NAME"-virtualenv:latest -t "$C_PROJECT_NAME"-virtualenv-test:latest -f build/virtualenv/Dockerfile-test build/virtualenv
+    docker build -t "$C_PROJECT_NAME"-virtualenv-test:latest -f build/virtualenv/Dockerfile-test build/virtualenv
 }
 
 
