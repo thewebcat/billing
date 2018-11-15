@@ -11,6 +11,9 @@ x-global: &global
     - .env
   restart: unless-stopped
 
+volumes:
+  pgdata:
+
 
 services:
 
@@ -19,15 +22,21 @@ services:
     image: "postgres:latest"
     container_name: __C_PROJECT_NAME__-db
     environment:
-      - POSTGRES_PASSWORD='secret'
+      - POSTGRES_DB=billing
+      - POSTGRES_PASSWORD=secret
     volumes:
-      - .docker/postgres/pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+      - ./share/sql:/docker-entrypoint-initdb.d/
+    ports:
+      - 5432:5432
 
   backend:
     <<: *global
     container_name: __C_PROJECT_NAME__-backend
     image: "__C_PROJECT_NAME__-virtualenv:latest"
-#    command: ["gunicorn", "billing.application:app", "-b", "0.0.0.0:8000", "--name", "billing", "--reload", "--worker-class", "aiohttp.GunicornWebWorker"]
+    environment:
+      - PYTHONPATH=$PWD:$PYTHONPATH
+#    command: ["gunicorn", "billing.__main__:app", "-b", "0.0.0.0:8000", "--name", "billing", "--reload"]
     command: ["python", "-m", "billing"]
     volumes:
       - .:/code
@@ -40,3 +49,4 @@ services:
     volumes:
       - .:/code
     command: ["echo", "tests"]
+    restart: "no"

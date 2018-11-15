@@ -10,8 +10,8 @@ COPY python-libs.txt /tmp/
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps  \
         build-base \
-    && pip install --install-option="--prefix=/install" -r /tmp/python-libs.txt \
-    && apk del .build-deps
+        postgresql-dev \
+    && pip install --install-option="--prefix=/install" -r /tmp/python-libs.txt
 
 FROM base
 
@@ -19,6 +19,8 @@ FROM base
 RUN apk add --no-cache \
         bash
 
+ENV LIBS /usr/lib
+COPY --from=builder $LIBS/libpq.so* $LIBS/libldap_r-2.4.so* $LIBS/liblber-2.4.so* $LIBS/libsasl2.so* /usr/lib/
 COPY --from=builder /install /usr/local
 
 WORKDIR /code/

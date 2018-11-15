@@ -1,26 +1,30 @@
-import asyncio
+import logging
 
-from aiohttp import web
+import connexion
 
 from billing.config import settings
+from billing.core.database import db, init_models
 
 __all__ = [
     'app'
 ]
 
-async def handle(request):
-    name = request.match_info.get('name', "Anonymous")
-    text = "Hello, " + name
-    return web.Response(text=text)
+logging.basicConfig(level=logging.INFO)
 
+app = connexion.App(__name__, specification_dir='../share/api/')
+app.add_api('swagger.yaml', arguments={'title': 'Billing System API'})
 
+application = app.app
+application.config.from_object(settings)
 
+# Import DB models. Flask-SQLAlchemy doesn't do this automatically.
+init_models()
 
-loop = asyncio.get_event_loop()
+# Initialize extensions/add-ons/plugins.
+db.init_app(application)
 
-app = web.Application()
-app.add_routes([web.get('/', handle),
-                web.get('/{name}', handle)])
-print('Starting application... \nLog level {}'.format(settings.LOGGING_LEVEL))
-
-web.run_app(app, host='0.0.0.0', port=8000)
+if __name__ == '__main__':
+    if settings.DEBUG:
+        app.run(port=8000, debug=settings.DEBUG)
+    else:
+        app.run(port=8000, server='gevent')
