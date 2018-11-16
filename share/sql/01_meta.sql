@@ -27,7 +27,6 @@ $$ LANGUAGE plpgsql VOLATILE
 CREATE OR REPLACE FUNCTION make_transfer_function()
 RETURNS trigger AS $$
 BEGIN
-  IF
   INSERT INTO "transaction" (amount, wallet_id) VALUES
   (-NEW."amount", NEW.source_id),
   (NEW."amount", NEW.destination_id);
@@ -44,7 +43,7 @@ CREATE TRIGGER trigger_sum
   FOR EACH ROW
   EXECUTE PROCEDURE total_sum_function();
 
-CREATE TRIGGER trigger_sum
+CREATE TRIGGER trigger_transfer
   AFTER INSERT
   ON "transfer"
   FOR EACH ROW

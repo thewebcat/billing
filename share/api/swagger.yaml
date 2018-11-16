@@ -25,3 +25,112 @@ paths:
           description: greeting response
           examples:
             "text/plain": "Hello John"
+
+  /wallets/:
+    get:
+      summary: Generate greeting
+      description: Generates a greeting message.
+      operationId: billing.api.views.wallet
+      responses:
+        200:
+          description: greeting response
+          examples:
+            "text/plain": "Hello John"
+
+  /tranfers:
+    get:
+      summary: Generate greeting
+      description: Generates a greeting message.
+      operationId: billing.api.views.TransferHandler.list
+      responses:
+        200:
+          description: greeting response
+          examples:
+            "text/plain": "Hello John"
+
+  /clients:
+    get:
+      summary: Get all clients list
+      operationId: billing.api.views.ClientsHandler.list
+      responses:
+        200:
+          description: Gets client by id
+
+    post:
+      summary: Get client summary info
+      operationId: billing.api.views.ClientsHandler.post
+      parameters:
+        - name: client
+          in: body
+          schema:
+            $ref: '#/definitions/Client'
+      responses:
+        201:
+          description: Register new Client object in a system
+          schema:
+            $ref: '#/definitions/Client'
+
+  /clients/{uuid}:
+    get:
+      summary: Get client summary info
+      operationId: billing.api.views.ClientsHandler.get
+      parameters:
+        - $ref: '#/parameters/uuid'
+      responses:
+        200:
+          description: Gets client by id
+        404:
+          description: Client does not exist
+
+
+parameters:
+  uuid:
+    in: path
+    name: uuid
+    description: UUID of client
+    type: string
+    required: true
+    pattern: "^[a-zA-Z0-9-]+$"
+
+
+definitions:
+  Client:
+    type: object
+    required:
+      - first_name
+      - country
+      - city
+    properties:
+      uuid:
+        type: string
+        description: Unique identifier
+        example: "5e45f735-5de4-49ed-89d4-a79d7589a096"
+        readOnly: true
+      first_name:
+        type: string
+        description: Clients's first name
+        example: "Susie"
+        minLength: 1
+        maxLength: 100
+      last_name:
+        type: string
+        description: Clients's last name
+        example: "Susie"
+        minLength: 1
+        maxLength: 100
+      country:
+        type: string
+        description: Client's county
+        example: "Russia"
+        minLength: 1
+      city:
+        type: string
+        description: Client's city
+        example: "Moscow"
+        minLength: 1
+      created_at:
+        type: string
+        format: date-time
+        description: Creation time
+        example: "2015-07-07T15:49:51.230+02:00"
+        readOnly: true
