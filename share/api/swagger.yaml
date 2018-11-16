@@ -39,12 +39,14 @@ paths:
 
   /tranfers:
     get:
+      tags: [Tranfers]
       summary: Get all tranfers list
       operationId: billing.api.views.TransferHandler.list
       responses:
         200:
           description: Gets transfers list
     post:
+      tags: [Tranfers]
       summary: Create a new transfer order
       operationId: billing.api.views.TransferHandler.post
       parameters:
@@ -61,6 +63,7 @@ paths:
 
   /tranfers/{uuid}:
     get:
+      tags: [Tranfers]
       summary: Get tranfer by uuid
       operationId: billing.api.views.TransferHandler.get
       parameters:
@@ -73,12 +76,14 @@ paths:
 
   /clients:
     get:
+      tags: [Clients]
       summary: Get all clients list
       operationId: billing.api.views.ClientsHandler.list
       responses:
         200:
-          description: Gets clients list
+          description: Return clients list
     post:
+      tags: [Clients]
       summary: Get client summary info
       operationId: billing.api.views.ClientsHandler.post
       parameters:
@@ -94,16 +99,34 @@ paths:
 
   /clients/{uuid}:
     get:
+      tags: [Clients]
       summary: Get client by uuid
       operationId: billing.api.views.ClientsHandler.get
       parameters:
         - $ref: '#/parameters/uuid'
       responses:
         200:
-          description: Gets client by id
+          description: Client successfully returned
         404:
           description: Client does not exist
 
+  /deposit:
+    post:
+      tags: [Deposit]
+      summary: Make deposit order
+      operationId: billing.api.views.deposit
+      responses:
+        201:
+          description: Deposit successfully completed
+
+  /withdrawal:
+    post:
+      tags: [Withdrawal]
+      summary: Make withdrawal order
+      operationId: billing.api.views.withdrawal
+      responses:
+        201:
+          description: Withdrawal successfully completed
 
 parameters:
   uuid:

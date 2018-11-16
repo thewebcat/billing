@@ -2,7 +2,9 @@ from sqlalchemy.exc import DataError
 
 from werkzeug.exceptions import abort
 
-from billing.api.models import Client, Transaction, Transfer, Wallet
+from billing.api.models import Client, Transaction, Transfer, Wallet, Rate
+from billing.conversion.backend import update_rates
+from billing.conversion.money import _get_rate
 from billing.core.log import logger
 
 
@@ -74,3 +76,12 @@ class ClientsHandler(BaseHandler):
         Wallet.create(balance=0, currency='USD', client_id=client.uuid)
         response = client.serialize()
         return response, 201
+
+
+def deposit() -> tuple:
+    # update_rates.update_rates()
+    print(_get_rate('USD', 'EUR'))
+    return '', 201
+
+def withdrawal() -> tuple:
+    pass

@@ -13,9 +13,21 @@ x-global: &global
 
 volumes:
   pgdata:
+  redisdata:
 
 
 services:
+
+  redis:
+    <<: *global
+    image: 'bitnami/redis:latest'
+    container_name: __C_PROJECT_NAME__-redis
+    environment:
+      ALLOW_EMPTY_PASSWORD: "True"
+    volumes:
+      - redisdata:/var/redis
+    expose:
+      - 6379
 
   db:
     <<: *global
