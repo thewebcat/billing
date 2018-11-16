@@ -1,4 +1,5 @@
-from .default import * # NOQA
+# flake8: noqa
+from .default import *
 
 from logging import config as logging_config
 

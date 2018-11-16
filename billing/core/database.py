@@ -2,10 +2,11 @@ import os
 from glob import glob
 from importlib import import_module
 
+from flask_sqlalchemy import SQLAlchemy
+
 from billing.config import settings
 from billing.core.log import logger
 
-from flask_sqlalchemy import SQLAlchemy
 
 __all__ = [
     'db',
@@ -13,6 +14,7 @@ __all__ = [
 ]
 
 db = SQLAlchemy()
+
 
 def init_models():
     for path in glob(settings.MODELS_PATTERN, recursive=True):

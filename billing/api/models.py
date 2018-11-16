@@ -42,41 +42,43 @@ class Client(ModelMixin, db.Model):
     __tablename__ = 'client'
 
     uuid = db.Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True,
-                     server_default=text("uuid_generate_v4()"))
+                     server_default=text('uuid_generate_v4()'))
     first_name = db.Column(db.String(255), nullable=False)
     last_name = db.Column(db.String(255), nullable=True)
     country = db.Column(db.String(255), nullable=False)
     city = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), server_default=text("Now()"))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=text('Now()'))
 
-    wallet = db.relationship("Wallet", backref='client', lazy=True)
+    wallet = db.relationship('Wallet', backref='client', lazy=True)
 
 
 class Wallet(ModelMixin, db.Model):
     __tablename__ = 'wallet'
 
     uuid = db.Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True,
-                     server_default=text("uuid_generate_v4()"))
+                     server_default=text('uuid_generate_v4()'))
     balance = db.Column(db.Numeric(12, 2), nullable=False)
     currency = db.Column(db.String(3), nullable=False)
-    client_id = db.Column(UUID(as_uuid=True), db.ForeignKey("client.uuid"))
-    created_at = db.Column(db.DateTime(timezone=True), server_default=text("Now()"))
+    client_id = db.Column(UUID(as_uuid=True), db.ForeignKey('client.uuid'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=text('Now()'))
 
 
 class Transfer(ModelMixin, db.Model):
     __tablename__ = 'transfer'
 
-    uuid = db.Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True)
+    uuid = db.Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True,
+                     server_default=text('uuid_generate_v4()'))
     amount = db.Column(db.Numeric(12, 2), nullable=False)
-    source_id = db.Column(UUID(as_uuid=True), db.ForeignKey("wallet.uuid"))
-    destination_id = db.Column(UUID(as_uuid=True), db.ForeignKey("wallet.uuid"))
-    created_at = db.Column(db.DateTime(timezone=True))
+    source_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
+    destination_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=text('Now()'))
 
 
 class Transaction(ModelMixin, db.Model):
     __tablename__ = 'transaction'
 
-    uuid = db.Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True)
+    uuid = db.Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True,
+                     server_default=text('uuid_generate_v4()'))
     amount = db.Column(db.Numeric(12, 2), nullable=False)
-    source_id = db.Column(UUID(as_uuid=True), db.ForeignKey("wallet.uuid"))
-    created_at = db.Column(db.DateTime(timezone=True))
+    wallet_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=text('Now()'))
