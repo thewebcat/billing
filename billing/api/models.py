@@ -1,16 +1,10 @@
-from datetime import datetime
-
 from sqlalchemy import text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.inspection import inspect
-from sqlalchemy.orm import column_property
-from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy.orm.collections import InstrumentedList
+from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy.sql.elements import BinaryExpression
 
-from billing.config import settings
-from billing.conversion.money import convert_money
 from billing.core.database import db
 
 
@@ -18,7 +12,7 @@ class Serializer:
 
     def serialize(self):
         result = {}
-        for c in inspect(self.__class__).all_orm_descriptors.keys():#inspect(self).attrs.keys():
+        for c in inspect(self.__class__).all_orm_descriptors.keys():
             if not isinstance(getattr(self, c), (Mapper, BinaryExpression)):
                 if not isinstance(getattr(self, c), InstrumentedList):
                     if not isinstance(getattr(self, c), db.Model):
@@ -66,26 +60,20 @@ class Client(ModelMixin, BaseMixin, db.Model):
 class Wallet(ModelMixin, BaseMixin, db.Model):
     __tablename__ = 'wallet'
 
-    balance = db.Column(db.Numeric(12, 2), nullable=False)
+    balance = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     currency = db.Column(db.String(3), nullable=False)
     client_id = db.Column(UUID(as_uuid=True), db.ForeignKey('client.uuid'))
 
-    def __init__(self, balance, currency):
-        self.balance = balance
-        self.currency = currency
-
-    @hybrid_property
-    def balance_converted(self):
-        if self.currency == settings.BASE_CURRENCY:
-            return self.balance
-        else:
-            return convert_money(self.balance, self.currency)
+    transfers = db.relationship('Transfer', backref='wallet', primaryjoin="or_(Wallet.uuid==Transfer.source_id, "
+                        "Wallet.uuid==Transfer.destination_id)")
+    transactions = db.relationship('Transaction', backref='wallet', lazy=True)
 
 
 class Transfer(ModelMixin, BaseMixin, db.Model):
     __tablename__ = 'transfer'
 
-    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), default=0, nullable=False)
+    amount_converted = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     source_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
     destination_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
 
@@ -93,7 +81,7 @@ class Transfer(ModelMixin, BaseMixin, db.Model):
 class Transaction(ModelMixin, BaseMixin, db.Model):
     __tablename__ = 'transaction'
 
-    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), default=0, nullable=False)
     wallet_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
 
 
@@ -101,6 +89,3 @@ class Rate(ModelMixin, db.Model):
     date = db.Column(db.Date(), unique=True, nullable=False, primary_key=True,
                      server_default=text('Now()'))
     currency = db.Column(JSONB())
-
-    @classmethod
-    def get_for_date(cls, date=None): pass

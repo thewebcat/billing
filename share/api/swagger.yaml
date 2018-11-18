@@ -114,7 +114,13 @@ paths:
     post:
       tags: [Deposit]
       summary: Make deposit order
-      operationId: billing.api.views.deposit
+      operationId: billing.api.views.DepositWithdrawal.post_deposit
+      parameters:
+        - in: body
+          name: deposit
+          required: true
+          schema:
+            $ref: '#/definitions/Deposit'
       responses:
         201:
           description: Deposit successfully completed
@@ -123,7 +129,13 @@ paths:
     post:
       tags: [Withdrawal]
       summary: Make withdrawal order
-      operationId: billing.api.views.withdrawal
+      operationId: billing.api.views.DepositWithdrawal.post_withdrawal
+      parameters:
+        - in: body
+          name: withdrawal
+          required: true
+          schema:
+            $ref: '#/definitions/Withdrawal'
       responses:
         201:
           description: Withdrawal successfully completed
@@ -190,11 +202,10 @@ definitions:
       uuid:
         type: string
         description: A unique identifier
-        example: "5e45f735-5de4-49ed-89d4-a79d7589a096"
         readOnly: true
       amount:
-        type: string
-        example: "1.00"
+        type: number
+        example: 1.00
         description: A transfer amount
       source_id:
         type: string
@@ -208,5 +219,34 @@ definitions:
         type: string
         format: date-time
         description: Creation time
-        example: "2015-07-07T15:49:51.230+02:00"
         readOnly: true
+
+  Deposit:
+    type: object
+    required:
+      - amount
+      - wallet_id
+    properties:
+      amount:
+        type: number
+        example: 1.00
+        description: A deposit amount
+      wallet_id:
+        type: string
+        description: A wallet identifier
+        example: "5e45f735-5de4-49ed-89d4-a79d7589a096"
+
+  Withdrawal:
+    type: object
+    required:
+      - amount
+      - wallet_id
+    properties:
+      amount:
+        type: number
+        example: 1.00
+        description: A withdrawal amount
+      wallet_id:
+        type: string
+        description: A wallet identifier
+        example: "5e45f735-5de4-49ed-89d4-a79d7589a096"

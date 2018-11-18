@@ -29,7 +29,7 @@ RETURNS trigger AS $$
 BEGIN
   INSERT INTO "transaction" (amount, wallet_id) VALUES
   (-NEW."amount", NEW.source_id),
-  (NEW."amount", NEW.destination_id);
+  (NEW."amount_converted", NEW.destination_id);
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql VOLATILE

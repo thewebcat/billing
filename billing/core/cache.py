@@ -20,4 +20,5 @@ class Cache:
         self.client.set(key, value)
         self.client.expire(key, self.timeout)
 
+
 cache = Cache()

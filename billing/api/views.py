@@ -2,9 +2,8 @@ from sqlalchemy.exc import DataError
 
 from werkzeug.exceptions import abort
 
-from billing.api.models import Client, Transaction, Transfer, Wallet, Rate
-from billing.conversion.backend import update_rates
-from billing.conversion.money import _get_rate
+from billing.api.models import Client, Transaction, Transfer, Wallet
+from billing.conversion.money import Converter
 from billing.core.log import logger
 
 
@@ -30,8 +29,7 @@ class TransferHandler(BaseHandler):
 
     @classmethod
     def list(cls, *args, **kwargs) -> tuple:
-        response = [item.serialize() for item in Transfer.query.all()]
-        return response, 200
+        return [item.serialize() for item in Transfer.query.all()], 200
 
     @classmethod
     def get(cls, *args, **kwargs) -> tuple:
@@ -41,15 +39,18 @@ class TransferHandler(BaseHandler):
         except DataError as err:
             logger.error(err, exc_info=True)
             raise abort(404)
-        response = transfer.serialize()
-        return response, 200
+        return transfer.serialize(), 200
 
     @classmethod
     def post(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['transfer'])
+        source_wallet = Wallet.query.get(inst.transfer['source_id'])
+        destination_wallet = Wallet.query.get(inst.transfer['destination_id'])
+        inst.transfer['amount_converted'] = Converter.convert_money(inst.transfer['amount'],
+                                                                    from_currency=source_wallet.currency,
+                                                                    to_currency=destination_wallet.currency)
         transfer = Transfer.create(**inst.transfer)
-        response = transfer.serialize()
-        return response, 201
+        return transfer.serialize(), 201
 
 
 class ClientsHandler(BaseHandler):
@@ -66,22 +67,27 @@ class ClientsHandler(BaseHandler):
 
     @classmethod
     def list(cls, *args, **kwargs) -> tuple:
-        response = [item.serialize() for item in Client.query.all()]
-        return response, 200
+        return [item.serialize() for item in Client.query.all()], 200
 
     @classmethod
     def post(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['client'])
         client = Client.create(**inst.client)
         Wallet.create(balance=0, currency='USD', client_id=client.uuid)
-        response = client.serialize()
-        return response, 201
+        return client.serialize(), 201
 
 
-def deposit() -> tuple:
-    # update_rates.update_rates()
-    print(_get_rate('USD', 'EUR'))
-    return '', 201
+class DepositWithdrawal(BaseHandler):
 
-def withdrawal() -> tuple:
-    pass
+    @classmethod
+    def post_deposit(cls, *args, **kwargs) -> tuple:
+        inst = cls(kwargs['deposit'])
+        transaction_ = Transaction.create(**inst.deposit)
+        return transaction_.serialize(), 201
+
+    @classmethod
+    def post_withdrawal(cls, *args, **kwargs) -> tuple:
+        inst = cls(kwargs['withdrawal'])
+        inst.withdrawal['amount'] = -inst.withdrawal['amount']
+        transaction_ = Transaction.create(**inst.withdrawal)
+        return transaction_.serialize(), 201

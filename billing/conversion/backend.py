@@ -7,12 +7,11 @@ from billing.config import settings
 from billing.conversion.exceptions import ImproperlyConfigured
 
 __all__ = [
-    'update_rates',
+    'rates_backend',
 ]
 
 
 class BaseBackend:
-
     __slots__ = ('url', 'access_key')
 
     def get_params(self):
@@ -31,6 +30,7 @@ class BaseBackend:
         if not Rate.query.get(datetime.now().date()):
             Rate.create(date=datetime.now().date(), currency=self.get_rates(**params))
 
+
 class OpenExchangeRatesBackend(BaseBackend):
 
     def __init__(self, url=settings.OPEN_EXCHANGE_RATES_URL, access_key=settings.OPEN_EXCHANGE_RATES_APP_ID):
@@ -41,4 +41,5 @@ class OpenExchangeRatesBackend(BaseBackend):
         self.url = url
         self.access_key = access_key
 
-update_rates = OpenExchangeRatesBackend()
+
+rates_backend = OpenExchangeRatesBackend()
