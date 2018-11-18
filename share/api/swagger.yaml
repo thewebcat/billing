@@ -14,28 +14,8 @@ consumes:
 produces:
   - "application/json"
 
-paths:
-  /transactions/:
-    get:
-      summary: Generate greeting
-      description: Generates a greeting message.
-      operationId: billing.api.views.transaction
-      responses:
-        200:
-          description: greeting response
-          examples:
-            "text/plain": "Hello John"
 
-  /wallets/:
-    get:
-      summary: Generate greeting
-      description: Generates a greeting message.
-      operationId: billing.api.views.wallet
-      responses:
-        200:
-          description: greeting response
-          examples:
-            "text/plain": "Hello John"
+paths:
 
   /tranfers:
     get:
@@ -112,7 +92,7 @@ paths:
 
   /deposit:
     post:
-      tags: [Deposit]
+      tags: [Deposit/Withdrawal]
       summary: Make deposit order
       operationId: billing.api.views.DepositWithdrawal.post_deposit
       parameters:
@@ -127,7 +107,7 @@ paths:
 
   /withdrawal:
     post:
-      tags: [Withdrawal]
+      tags: [Deposit/Withdrawal]
       summary: Make withdrawal order
       operationId: billing.api.views.DepositWithdrawal.post_withdrawal
       parameters:
@@ -140,6 +120,45 @@ paths:
         201:
           description: Withdrawal successfully completed
 
+  /report/{uuid}:
+    get:
+      tags: [Reports]
+      summary: Get clients report by uuid
+      operationId: billing.api.views.report
+      parameters:
+        - $ref: '#/parameters/uuid'
+        - name: start_date
+          in: query
+          description: Start report date
+          type: string
+          format: customdate
+#          example: '2018-11-16'
+        - name: end_date
+          in: query
+          description: End report date
+          type: string
+          format: customdate
+#          example: '2018-11-17'
+      responses:
+        200:
+          description: Report successfully returned
+        404:
+          description: Reports does not exist
+
+  /courses/{date}:
+    get:
+      tags: [Reports]
+      summary: Get courses by date
+      operationId: billing.api.views.courses
+      parameters:
+        - $ref: '#/parameters/date'
+        - $ref: '#/parameters/currency'
+      responses:
+        200:
+          description: Report successfully returned
+        404:
+          description: Reports does not exist
+
 parameters:
   uuid:
     in: path
@@ -148,6 +167,20 @@ parameters:
     type: string
     required: true
     pattern: "^[a-zA-Z0-9-]+$"
+
+  date:
+    in: path
+    name: date
+    description: Cources date
+    format: customdate
+    type: string
+    required: true
+
+  currency:
+    in: query
+    name: currency
+    description: Currency
+    type: string
 
 
 definitions:

@@ -20,5 +20,8 @@ class Cache:
         self.client.set(key, value)
         self.client.expire(key, self.timeout)
 
+    def clear(self):
+        self.client.flushall()
+
 
 cache = Cache()

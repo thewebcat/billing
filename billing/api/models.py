@@ -1,9 +1,12 @@
-from sqlalchemy import text
+from sqlalchemy import Enum, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.exc import DataError
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy.sql.elements import BinaryExpression
+
+from werkzeug.exceptions import abort
 
 from billing.core.database import db
 
@@ -33,6 +36,16 @@ class ModelMixin:
         db.session.commit()
         return obj
 
+    @classmethod
+    def get_or_abort(cls, object_id, code=404):
+        try:
+            result = cls.query.get(object_id)
+        except DataError as err:
+            abort(400, err.__str__())
+        if result is None:
+            abort(code, f'The requested {cls.__mro__[0].__name__} was not found on the server')
+        return result
+
     def __repr__(self):
         res = f'{self.__class__.__name__}'
         if hasattr(self, 'uuid'):
@@ -61,12 +74,16 @@ class Wallet(ModelMixin, BaseMixin, db.Model):
     __tablename__ = 'wallet'
 
     balance = db.Column(db.Numeric(12, 2), default=0, nullable=False)
-    currency = db.Column(db.String(3), nullable=False)
+    currency = db.Column(Enum('USD', 'EUR', 'CAD', 'CNY', name='currency_list', create_type=False))
     client_id = db.Column(UUID(as_uuid=True), db.ForeignKey('client.uuid'))
 
-    transfers = db.relationship('Transfer', backref='wallet', primaryjoin="or_(Wallet.uuid==Transfer.source_id, "
-                        "Wallet.uuid==Transfer.destination_id)")
+    transfers = db.relationship('Transfer', backref='wallet', primaryjoin='or_(Wallet.uuid==Transfer.source_id, '
+                                                                          'Wallet.uuid==Transfer.destination_id)')
     transactions = db.relationship('Transaction', backref='wallet', lazy=True)
+
+    def validate_balance(self, value):
+        if self.balance - value < 0:
+            return abort(400, f'You do not have enough amount on your balance to make this operation')
 
 
 class Transfer(ModelMixin, BaseMixin, db.Model):
@@ -82,10 +99,13 @@ class Transaction(ModelMixin, BaseMixin, db.Model):
     __tablename__ = 'transaction'
 
     amount = db.Column(db.Numeric(12, 2), default=0, nullable=False)
+    type = db.Column(Enum('deposit', 'withdrawal', 'transfer', name='transaction_types_list', create_type=False))
     wallet_id = db.Column(UUID(as_uuid=True), db.ForeignKey('wallet.uuid'))
 
 
 class Rate(ModelMixin, db.Model):
+    __tablename__ = 'rate'
+
     date = db.Column(db.Date(), unique=True, nullable=False, primary_key=True,
                      server_default=text('Now()'))
     currency = db.Column(JSONB())

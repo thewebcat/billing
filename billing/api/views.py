@@ -1,10 +1,8 @@
-from sqlalchemy.exc import DataError
-
-from werkzeug.exceptions import abort
+from sqlalchemy import and_
 
 from billing.api.models import Client, Transaction, Transfer, Wallet
+from billing.config import settings
 from billing.conversion.money import Converter
-from billing.core.log import logger
 
 
 class BaseHandler:
@@ -13,16 +11,6 @@ class BaseHandler:
 
     def __getattr__(self, item):
         return self.__attr
-
-
-def transaction() -> tuple:
-    transactions = Transaction.query.all()
-    return [item.serialize() for item in transactions], 200
-
-
-def wallet() -> tuple:
-    wallets = Wallet.query.all()
-    return [item.serialize() for item in wallets], 200
 
 
 class TransferHandler(BaseHandler):
@@ -34,18 +22,15 @@ class TransferHandler(BaseHandler):
     @classmethod
     def get(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['uuid'])
-        try:
-            transfer = Transfer.query.filter_by(uuid=inst.uuid).first()
-        except DataError as err:
-            logger.error(err, exc_info=True)
-            raise abort(404)
+        transfer = Transfer.get_or_abort(inst.uuid)
         return transfer.serialize(), 200
 
     @classmethod
     def post(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['transfer'])
-        source_wallet = Wallet.query.get(inst.transfer['source_id'])
-        destination_wallet = Wallet.query.get(inst.transfer['destination_id'])
+        source_wallet = Wallet.get_or_abort(inst.transfer['source_id'])
+        source_wallet.validate_balance(inst.transfer['amount'])
+        destination_wallet = Wallet.get_or_abort(inst.transfer['destination_id'])
         inst.transfer['amount_converted'] = Converter.convert_money(inst.transfer['amount'],
                                                                     from_currency=source_wallet.currency,
                                                                     to_currency=destination_wallet.currency)
@@ -58,11 +43,7 @@ class ClientsHandler(BaseHandler):
     @classmethod
     def get(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['uuid'])
-        try:
-            response = Client.query.filter_by(uuid=inst.uuid).first()
-        except DataError as err:
-            logger.error(err, exc_info=True)
-            raise abort(404)
+        response = Client.get_or_abort(inst.uuid)
         return response.serialize(), 200
 
     @classmethod
@@ -82,12 +63,37 @@ class DepositWithdrawal(BaseHandler):
     @classmethod
     def post_deposit(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['deposit'])
+        inst.deposit['type'] = 'deposit'
         transaction_ = Transaction.create(**inst.deposit)
         return transaction_.serialize(), 201
 
     @classmethod
     def post_withdrawal(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['withdrawal'])
+        wallet_ = Wallet.get_or_abort(inst.withdrawal['wallet_id'])
+        wallet_.validate_balance(inst.withdrawal['amount'])
+        inst.withdrawal['type'] = 'withdrawal'
         inst.withdrawal['amount'] = -inst.withdrawal['amount']
         transaction_ = Transaction.create(**inst.withdrawal)
         return transaction_.serialize(), 201
+
+
+def report(uuid, start_date=None, end_date=None):
+    transaction_ = Transaction.query.join(Wallet).filter(Wallet.client_id == uuid)
+    if start_date and end_date:
+        response = transaction_.filter(
+            and_(Transaction.created_at >= start_date, Transaction.created_at <= end_date)).all()
+    elif start_date:
+        response = transaction_.filter(
+            and_(Transaction.created_at >= start_date)).all()
+    elif end_date:
+        response = transaction_.filter(
+            and_(Transaction.created_at <= end_date)).all()
+    else:
+        response = transaction_.all()
+    return [item.serialize() for item in response], 200
+
+
+def courses(date, currency):
+    result = Converter.get_rate_by_date(currency, date)
+    return {f'{currency}/{settings.BASE_CURRENCY}': result}, 200

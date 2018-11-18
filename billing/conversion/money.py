@@ -2,6 +2,7 @@ import decimal
 from collections import namedtuple
 from datetime import datetime
 
+from billing.config import settings
 from billing.conversion.backend import rates_backend
 from billing.core.cache import cache
 from billing.core.utils import round_decimal
@@ -22,7 +23,7 @@ class Converter:
         self.date = date
 
     def get_rate(self):
-        key = f'get_rate:{self.source}:{self.target}'
+        key = f'get_rate:{self.source}:{self.target}:{self.date}'
         result = cache.get(key)
         if result is not None:
             return result
@@ -36,11 +37,13 @@ class Converter:
             return 1
         rate_obj = Rate.query.get(self.date)
         if not rate_obj:
-            rates_backend.update_rates()
+            rates_backend.update_rates(date=self.date)
+            rate_obj = Rate.query.get(self.date)
         currencies = rate_obj.currency
         RateList = namedtuple('RateList', 'currency value')
-        rates = [RateList(self.source, currencies[self.source]), RateList(self.target, currencies[self.target])]
-        if not rates:
+        try:
+            rates = [RateList(self.source, currencies[self.source]), RateList(self.target, currencies[self.target])]
+        except KeyError:
             raise MissingRate('Rate %s -> %s does not exist' % (self.source, self.target))
         return self._get_rate_base(rates)
 
@@ -58,3 +61,8 @@ class Converter:
             value = decimal.Decimal(value)
         amount = round_decimal(value * decimal.Decimal(self.get_rate()))
         return amount
+
+    @classmethod
+    def get_rate_by_date(cls, currency, date=datetime.now().date()):
+        self = cls(settings.BASE_CURRENCY, currency, date)
+        return self.get_rate()
