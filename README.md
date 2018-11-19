@@ -14,6 +14,9 @@ And then build and run project
 $ ./run.sh stack
 ```
 
+You can get access to swagger UI from this url:
+ - [http://127.0.0.1:8000/api/v1.0/ui](http://127.0.1.0:8000/api/v1.0/ui)
+
 Up/Down project
 ``` {.sourceCode .bash}
 $ docker-compose up -d
