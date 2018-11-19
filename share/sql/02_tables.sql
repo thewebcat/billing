@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS client (
   city        VARCHAR(255) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT Now()
 );
+CREATE INDEX created_at_idx ON client USING hash ("created_at");
 
 CREATE TABLE IF NOT EXISTS wallet (
   uuid   uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
