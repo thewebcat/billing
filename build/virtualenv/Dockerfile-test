@@ -8,6 +8,9 @@ WORKDIR /install
 COPY python-libs.txt /tmp/
 COPY python-test-libs.txt /tmp/
 
+# Add coverage
+COPY sitecustomize.py /install/lib/python3.6/site-packages/
+
 # Install dependencies
 RUN apk add --no-cache --virtual .build-deps  \
         build-base \
@@ -25,3 +28,5 @@ COPY --from=builder $LIBS/libpq.so* $LIBS/libldap_r-2.4.so* $LIBS/liblber-2.4.so
 COPY --from=builder /install /usr/local
 
 WORKDIR /code/
+
+ENV COVERAGE_PROCESS_START /code/.coveragerc

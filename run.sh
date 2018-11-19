@@ -96,6 +96,8 @@ stack() {
     generate_compose "$STACK"
     docker_build
 
+    mkdir -p "tmp/coverage";
+
     docker-compose up -d
 
     echo "Done"
@@ -152,6 +154,31 @@ generate_compose() {
     done
 }
 
+coverage() {
+    local CMD=$1
+    shift
+
+    case $CMD in
+        report) coverage_report "$@";;
+        clean) coverage_clean "$@";;
+        *) echo "$0 coverage [report|clean]"; exit;;
+    esac
+}
+
+coverage_report() {
+    local COVERAGE_RCFILE=.coveragerc
+    local COVERAGE_DATA=tmp/coverage/
+
+    docker-compose run \
+        --rm test sh -c "coverage combine --rcfile=$COVERAGE_RCFILE $COVERAGE_DATA && coverage report --rcfile=$COVERAGE_RCFILE && coverage html --rcfile=$COVERAGE_RCFILE"
+}
+
+coverage_clean() {
+    docker-compose run \
+        --rm test rm -rf "tmp/coverage";
+    mkdir -p "tmp/coverage";
+}
+
 test() {
     local CMD=$1
     shift
@@ -160,7 +187,8 @@ test() {
         style) test_style "$@";;
         functional) test_functional "$@";;
         unit) test_unit "$@";;
-        *) echo "$0 test [style|functional|unit]"; exit;;
+        ci) test_ci "$@" ;;
+        *) echo "$0 test [style|functional|unit|ci]"; exit;;
     esac
 }
 
@@ -174,6 +202,7 @@ test_style() {
 
 test_functional() {
     echo "Running functional tests"
+    mkdir -p "tmp/coverage";
 
     docker-compose run \
         -v "${PWD}":/code \
@@ -183,6 +212,7 @@ test_functional() {
 
 test_unit() {
     echo "Running unit tests"
+    mkdir -p "tmp/coverage";
 
     docker-compose run \
         -v "${PWD}":/code \
@@ -190,10 +220,23 @@ test_unit() {
         pytest -p no:cacheprovider test/unit "$@"
 }
 
+test_ci() {
+    test_style
+
+    coverage_clean
+
+    local TEST_STATUS=0
+
+    test_unit "$@" || TEST_STATUS=$?
+    test_functional "$@" || TEST_STATUS=$?
+
+    coverage_report
+    exit $TEST_STATUS
+}
+
 docker_build() {
     docker build -t "$C_PROJECT_NAME"-virtualenv:latest -f build/virtualenv/Dockerfile build/virtualenv
     docker build -t "$C_PROJECT_NAME"-virtualenv-test:latest -f build/virtualenv/Dockerfile-test build/virtualenv
 }
-
 
 main "$@"

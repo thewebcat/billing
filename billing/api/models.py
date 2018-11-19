@@ -1,3 +1,5 @@
+import decimal
+
 from sqlalchemy import Enum, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.exc import DataError
@@ -82,7 +84,7 @@ class Wallet(ModelMixin, BaseMixin, db.Model):
     transactions = db.relationship('Transaction', backref='wallet', lazy=True)
 
     def validate_balance(self, value):
-        if self.balance - value < 0:
+        if self.balance - decimal.Decimal(value) < 0:
             return abort(400, f'You do not have enough amount on your balance to make this operation')
 
 

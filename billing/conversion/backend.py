@@ -23,7 +23,7 @@ class BaseBackend:
         if not self.date:
             response = requests.get(self.url, params=params)
         else:
-            response = requests.get(self.url_historical.replace('*', self.date), params=params)
+            response = requests.get(self.url_historical.replace('*', str(self.date)), params=params)
         return response.json()
 
     def get_rates(self, **params):

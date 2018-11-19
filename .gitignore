@@ -113,3 +113,6 @@ venv.bak/
 # Docker
 /.docker
 /docker-compose.yaml
+
+# pytest
+/tmp

@@ -132,13 +132,11 @@ paths:
           description: Start report date
           type: string
           format: customdate
-#          example: '2018-11-16'
         - name: end_date
           in: query
           description: End report date
           type: string
           format: customdate
-#          example: '2018-11-17'
       responses:
         200:
           description: Report successfully returned
@@ -218,6 +216,11 @@ definitions:
         description: Client's city
         example: "Moscow"
         minLength: 1
+      currency:
+        type: string
+        example: USD
+        enum: [USD, EUR, CAD, CNY]
+        description: A transaction type
       created_at:
         type: string
         format: date-time

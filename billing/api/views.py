@@ -53,8 +53,9 @@ class ClientsHandler(BaseHandler):
     @classmethod
     def post(cls, *args, **kwargs) -> tuple:
         inst = cls(kwargs['client'])
+        currency = inst.client.pop('currency')
         client = Client.create(**inst.client)
-        Wallet.create(balance=0, currency='USD', client_id=client.uuid)
+        Wallet.create(balance=0, currency=currency, client_id=client.uuid)
         return client.serialize(), 201
 
 
