@@ -5,77 +5,63 @@ from billing.config import settings
 from billing.conversion.money import converter
 
 
-class BaseHandler:
-    def __init__(self, attr=None):
-        self.__attr = attr
-
-    def __getattr__(self, item):
-        return self.__attr
-
-
-class TransferHandler(BaseHandler):
+class TransferHandler:
 
     @classmethod
-    def list(cls, *args, **kwargs) -> tuple:
+    def list(cls) -> tuple:
         return [item.serialize() for item in Transfer.query.all()], 200
 
     @classmethod
-    def get(cls, *args, **kwargs) -> tuple:
-        inst = cls(kwargs['uuid'])
-        transfer = Transfer.get_or_abort(inst.uuid)
+    def get(cls, uuid) -> tuple:
+        transfer = Transfer.get_or_abort(uuid)
         return transfer.serialize(), 200
 
     @classmethod
-    def post(cls, *args, **kwargs) -> tuple:
-        inst = cls(kwargs['transfer'])
-        source_wallet = Wallet.get_or_abort(inst.transfer['source_id'])
-        source_wallet.validate_balance(inst.transfer['amount'])
-        destination_wallet = Wallet.get_or_abort(inst.transfer['destination_id'])
-        inst.transfer['amount_converted'] = converter.convert_money(inst.transfer['amount'],
-                                                                    from_currency=source_wallet.currency,
-                                                                    to_currency=destination_wallet.currency)
-        transfer = Transfer.create(**inst.transfer)
+    def post(cls, transfer) -> tuple:
+        source_wallet = Wallet.get_or_abort(transfer['source_id'])
+        source_wallet.validate_balance(transfer['amount'])
+        destination_wallet = Wallet.get_or_abort(transfer['destination_id'])
+        transfer['amount_converted'] = converter.convert_money(transfer['amount'],
+                                                               from_currency=source_wallet.currency,
+                                                               to_currency=destination_wallet.currency)
+        transfer = Transfer.create(**transfer)
         return transfer.serialize(), 201
 
 
-class ClientsHandler(BaseHandler):
+class ClientsHandler:
 
     @classmethod
-    def get(cls, *args, **kwargs) -> tuple:
-        inst = cls(kwargs['uuid'])
-        response = Client.get_or_abort(inst.uuid)
+    def get(cls, uuid) -> tuple:
+        response = Client.get_or_abort(uuid)
         return response.serialize(), 200
 
     @classmethod
-    def list(cls, *args, **kwargs) -> tuple:
+    def list(cls) -> tuple:
         return [item.serialize() for item in Client.query.all()], 200
 
     @classmethod
-    def post(cls, *args, **kwargs) -> tuple:
-        inst = cls(kwargs['client'])
-        currency = inst.client.pop('currency')
-        client = Client.create(**inst.client)
+    def post(cls, client) -> tuple:
+        currency = client.pop('currency')
+        client = Client.create(**client)
         Wallet.create(balance=0, currency=currency, client_id=client.uuid)
         return client.serialize(), 201
 
 
-class DepositWithdrawal(BaseHandler):
+class DepositWithdrawal:
 
     @classmethod
-    def post_deposit(cls, *args, **kwargs) -> tuple:
-        inst = cls(kwargs['deposit'])
-        inst.deposit['type'] = 'deposit'
-        transaction_ = Transaction.create(**inst.deposit)
+    def post_deposit(cls, deposit) -> tuple:
+        deposit['type'] = 'deposit'
+        transaction_ = Transaction.create(**deposit)
         return transaction_.serialize(), 201
 
     @classmethod
-    def post_withdrawal(cls, *args, **kwargs) -> tuple:
-        inst = cls(kwargs['withdrawal'])
-        wallet_ = Wallet.get_or_abort(inst.withdrawal['wallet_id'])
-        wallet_.validate_balance(inst.withdrawal['amount'])
-        inst.withdrawal['type'] = 'withdrawal'
-        inst.withdrawal['amount'] = -inst.withdrawal['amount']
-        transaction_ = Transaction.create(**inst.withdrawal)
+    def post_withdrawal(cls, withdrawal) -> tuple:
+        wallet_ = Wallet.get_or_abort(withdrawal['wallet_id'])
+        wallet_.validate_balance(withdrawal['amount'])
+        withdrawal['type'] = 'withdrawal'
+        withdrawal['amount'] = -withdrawal['amount']
+        transaction_ = Transaction.create(**withdrawal)
         return transaction_.serialize(), 201
 
 
