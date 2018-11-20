@@ -2,7 +2,7 @@
 import pytest
 
 from billing.api.models import Client, Transaction, Transfer, Wallet
-from billing.conversion.money import Converter
+from billing.conversion.money import converter
 
 
 @pytest.fixture()
@@ -77,7 +77,7 @@ def test_transfer(app, test_register, test_deposit, test_withdrawal):
     destination_wallet = Wallet.query.get(data['destination_id'])
     assert destination_wallet.balance == 0
     source_wallet.validate_balance(data['amount'])
-    amount_converted = Converter.convert_money(data['amount'], from_currency=source_wallet.currency,
+    amount_converted = converter.convert_money(data['amount'], from_currency=source_wallet.currency,
                                                to_currency=destination_wallet.currency)
     data['amount_converted'] = amount_converted
     Transfer.create(**data)

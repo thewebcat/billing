@@ -10,17 +10,17 @@ from billing.core.utils import round_decimal
 from .exceptions import MissingRate
 
 __all__ = [
-    'Converter'
+    'converter'
 ]
 
 
 class Converter:
     __slots__ = ('source', 'target', 'date')
 
-    def __init__(self, source, target, date):
-        self.source = source
-        self.target = target
-        self.date = date
+    def __init__(self):
+        self.source = None
+        self.target = None
+        self.date = None
 
     def get_rate(self):
         key = f'get_rate:{self.source}:{self.target}:{self.date}'
@@ -54,15 +54,16 @@ class Converter:
             first, second = second, first
         return second.value / first.value
 
-    @classmethod
-    def convert_money(cls, value, from_currency, to_currency, date=datetime.now().date()):
-        self = cls(from_currency, to_currency, date)
+    def convert_money(self, value, from_currency, to_currency, date=datetime.now().date()):
+        self.source, self.target, self.date = from_currency, to_currency, date
         if not isinstance(value, decimal.Decimal):
             value = decimal.Decimal(value)
         amount = round_decimal(value * decimal.Decimal(self.get_rate()))
         return amount
 
-    @classmethod
-    def get_rate_by_date(cls, currency, date=datetime.now().date()):
-        self = cls(settings.BASE_CURRENCY, currency, date)
+    def get_rate_by_date(self, currency, date=datetime.now().date()):
+        self.source, self.target, self.date = settings.BASE_CURRENCY, currency, date
         return self.get_rate()
+
+
+converter = Converter()

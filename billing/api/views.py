@@ -2,7 +2,7 @@ from sqlalchemy import and_
 
 from billing.api.models import Client, Transaction, Transfer, Wallet
 from billing.config import settings
-from billing.conversion.money import Converter
+from billing.conversion.money import converter
 
 
 class BaseHandler:
@@ -31,7 +31,7 @@ class TransferHandler(BaseHandler):
         source_wallet = Wallet.get_or_abort(inst.transfer['source_id'])
         source_wallet.validate_balance(inst.transfer['amount'])
         destination_wallet = Wallet.get_or_abort(inst.transfer['destination_id'])
-        inst.transfer['amount_converted'] = Converter.convert_money(inst.transfer['amount'],
+        inst.transfer['amount_converted'] = converter.convert_money(inst.transfer['amount'],
                                                                     from_currency=source_wallet.currency,
                                                                     to_currency=destination_wallet.currency)
         transfer = Transfer.create(**inst.transfer)
@@ -96,5 +96,5 @@ def report(uuid, start_date=None, end_date=None):
 
 
 def courses(date, currency):
-    result = Converter.get_rate_by_date(currency, date)
+    result = converter.get_rate_by_date(currency, date)
     return {f'{currency}/{settings.BASE_CURRENCY}': result}, 200
