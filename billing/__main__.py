@@ -3,8 +3,6 @@ import logging
 import connexion
 
 from billing.config import settings
-# from billing.conversion.backend import rates_backend
-# from billing.core.celery import make_celery
 from billing.core.database import db, init_models
 from billing.core.handlers import init_handlers
 from billing.core.validators import init_validators
@@ -31,13 +29,6 @@ init_models()
 init_validators()
 init_handlers(application)
 db.init_app(application)
-# celery = make_celery(application)
-
-# @celery.task
-# def send_async_email():
-#     """Background task to send an email with Flask-Mail."""
-#     with application.app_context():
-#         rates_backend.update_rates()
 
 if __name__ == '__main__':
     if settings.DEBUG:
